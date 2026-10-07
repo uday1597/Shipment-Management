@@ -35,11 +35,17 @@ class ShipmentRepository:
         if shipment is None:
             return None
 
-        self.shipments[shipment_id].update(updates)
+        shipment.update(updates)
 
-        return self.shipments[shipment_id]
+        return shipment
+
 
     def delete(self, shipment_id: int):
-        self.shipments.pop(shipment_id)
+        shipment = self.get_by_id(shipment_id)
+
+        if shipment is None:
+            return False
+
+        self.shipments.remove(shipment)
 
         return True
