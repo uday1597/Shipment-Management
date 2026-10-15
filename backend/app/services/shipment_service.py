@@ -82,13 +82,13 @@ class ShipmentService:
         }
         return self.repository.update(shipment_id, replacement)
     
-    def delete_shipment(self,shipment_id: int):
-        shipment = self.repository.delete(shipment_id)
+    def delete_shipment(self, shipment_id: int):
+        deleted = self.repository.delete(shipment_id)
 
-        if shipment is None:
+        if not deleted:
             raise ShipmentNotFoundError("Shipment not found")
 
-        return shipment
+        return True
 
     @log_execution_time
     def get_shipping_cost(self, shipment_id: int):

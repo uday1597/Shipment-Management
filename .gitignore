@@ -1,0 +1,83 @@
+
+# ==============================
+# Python / FastAPI
+# ==============================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# Python environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# ==============================
+# Node.js / React / Vite
+# ==============================
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+.npm/
+*.tsbuildinfo
+
+# Keep lockfiles tracked:
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
+
+# ==============================
+# Editors / IDEs
+# ==============================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==============================
+# Operating system files
+# ==============================
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# ==============================
+# Logs and temporary files
+# ==============================
+*.log
+logs/
+tmp/
+temp/
+
+# ==============================
+# Local databases and backups
+# ==============================
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+
+# ==============================
+# Local secrets / certificates
+# ==============================
+*.pem
+*.key
+secrets/

@@ -17,9 +17,4 @@ export interface ShipmentCreate {
   distance: number;
 }
 
-export interface ShipmentUpdate {
-  content?: string;
-  destination?: string;
-  weight?: number;
-  distance?: number;
-}
+export type ShipmentUpdate = Partial<ShipmentCreate>;

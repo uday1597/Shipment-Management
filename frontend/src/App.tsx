@@ -4,7 +4,18 @@ import { AddShipmentPage } from "./features/shipments/pages/AddShipmentPage";
 import "./App.css";
 import { ShipmentLandingPage } from "./features/shipments/pages/ShipmentLandingPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: true,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 function App() {
   return (

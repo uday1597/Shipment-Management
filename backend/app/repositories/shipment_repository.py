@@ -1,51 +1,86 @@
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models import Shipment
+
+
 class ShipmentRepository:
-    def __init__(self, database_dict: dict):
-        # The repo now works out of whatever dictionary we pass into it
-        self.shipments = database_dict
+    def __init__(self, db: Session):
+        self.db = db
 
-    def get_all(self):
-        return self.shipments
-
-    def get_by_id(self, shipment_id: int):
-        for shipment in self.shipments:
-            if shipment["id"] == shipment_id:
-                return shipment
-
-        return None
-
-    def create(self, shipment_data: dict):
-        new_id = max(
-            (shipment["id"] for shipment in self.shipments),
-            default=0
-        ) + 1
-
-        new_shipment = {
-            "id": new_id,
-            **shipment_data
+    @staticmethod
+    def _to_dict(shipment: Shipment) -> dict:
+        return {
+            "id": shipment.id,
+            "content": shipment.content,
+            "destination": shipment.destination,
+            "status": shipment.status,
+            "weight": shipment.weight,
+            "distance": shipment.distance,
+            "cost": shipment.cost,
         }
 
-        self.shipments.append(new_shipment)
+    def get_all(self) -> list[dict]:
+        shipments = self.db.scalars(
+            select(Shipment).order_by(Shipment.id)
+        ).all()
 
-        return new_shipment
+        return [self._to_dict(item) for item in shipments]
 
-
-    def update(self, shipment_id: int, updates: dict):
-        shipment = self.get_by_id(shipment_id)
+    def get_by_id(self, shipment_id: int) -> dict | None:
+        shipment = self.db.get(Shipment, shipment_id)
 
         if shipment is None:
             return None
 
-        shipment.update(updates)
+        return self._to_dict(shipment)
 
-        return shipment
+    def create(self, shipment_data: dict) -> dict:
+        data = {
+            key: value
+            for key, value in shipment_data.items()
+            if key != "id"
+        }
 
+        shipment = Shipment(**data)
+        self.db.add(shipment)
+        self.db.commit()
+        self.db.refresh(shipment)
 
-    def delete(self, shipment_id: int):
-        shipment = self.get_by_id(shipment_id)
+        return self._to_dict(shipment)
+
+    def update(self, shipment_id: int, updates: dict) -> dict | None:
+        shipment = self.db.get(Shipment, shipment_id)
+
+        if shipment is None:
+            return None
+
+        allowed_fields = {
+            "content",
+            "destination",
+            "status",
+            "weight",
+            "distance",
+            "cost",
+        }
+
+        for field in allowed_fields:
+            if field in updates:
+                setattr(shipment, field, updates[field])
+
+        self.db.commit()
+        self.db.refresh(shipment)
+
+        return self._to_dict(shipment)
+
+    def delete(self, shipment_id: int) -> bool:
+        shipment = self.db.get(Shipment, shipment_id)
 
         if shipment is None:
             return False
 
-        self.shipments.remove(shipment)
+        self.db.delete(shipment)
+        self.db.commit()
 
         return True
