@@ -5,7 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import axios from "axios";
-
+import ProofOfDeliveryPhoto from '../components/ProofOfDeliveryPhoto';
 import { AddShipmentModal } from "../components/AddShipmentModal";
 import DeleteShipmentModal from "../components/DeleteShipmentModal";
 
@@ -99,6 +99,10 @@ function getStatusGroup(status: unknown): StatusGroup {
 }
 
 export function ShipmentLandingPage() {
+
+  // Inside your existing component:
+  const [proofShipment, setProofShipment] =
+  useState<Shipment | null>(null);
   const queryClient = useQueryClient();
 
   const selectedShipmentId = useShipmentStore(
@@ -619,7 +623,31 @@ export function ShipmentLandingPage() {
                           <td className="px-5 py-4 text-right font-mono text-xs text-white/55">{formatNumber(shipment.weight)}</td>
                           <td className="px-5 py-4 text-right font-mono text-xs text-white/55">{formatNumber(shipment.distance)}</td>
                           <td className="px-5 py-4 text-right font-mono text-sm text-amber-100/85">{formatMoney(shipment.cost)}</td>
-                          <td className="px-5 py-4 text-right"><button type="button" onClick={(event) => handleDelete(event, shipment)} disabled={deleteMutation.isPending} aria-label={`Delete shipment ${shipment.content}`} className="rounded-full border border-white/10 px-3 py-2 text-[10px] text-white/45 transition hover:border-red-200/30 hover:text-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:opacity-40">Delete</button></td>
+                          <td className="px-5 py-4">
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setProofShipment(shipment);
+                                }}
+                                aria-label={`Add proof of delivery for shipment ${shipment.id}`}
+                                className="min-h-11 rounded-full border border-amber-200/25 px-3 py-2 text-xs text-amber-100 hover:bg-amber-200/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                              >
+                                📷 Proof of Delivery
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(event) => handleDelete(event, shipment)}
+                                disabled={deleteMutation.isPending}
+                                aria-label={`Delete shipment ${shipment.content}`}
+                                className="min-h-11 rounded-full border border-white/10 px-3 py-2 text-xs text-white/60 hover:border-red-200/30 hover:text-red-100"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -637,7 +665,41 @@ export function ShipmentLandingPage() {
           <p>{isFetching ? "Syncing shipment data…" : "Shipment data synced from your API"}</p>
         </footer>
       </div>
+      {proofShipment && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setProofShipment(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="proof-title"
+            className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#15171b] p-5 text-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 id="proof-title" className="text-lg font-semibold">
+                Proof of Delivery — #{proofShipment.id}
+              </h2>
 
+              <button
+                type="button"
+                aria-label="Close proof of delivery"
+                onClick={() => setProofShipment(null)}
+                className="min-h-11 min-w-11 rounded-full hover:bg-white/10"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mb-4 text-sm text-white/60">
+              {proofShipment.content} · {proofShipment.destination}
+            </p>
+
+            <ProofOfDeliveryPhoto />
+          </div>
+        </div>
+      )}
       {isDetailsModalOpen && (
         <AddShipmentModal shipment={selectedShipment} onClose={closeDetailsModal} />
       )}

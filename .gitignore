@@ -81,3 +81,32 @@ temp/
 *.pem
 *.key
 secrets/
+
+
+# ==============================
+# Android / Capacitor / Gradle
+# ==============================
+
+# Gradle caches and generated builds
+android/.gradle/
+android/**/build/
+android/**/captures/
+android/**/externalNativeBuild/
+android/**/cxx/
+
+# Local Android SDK path
+android/local.properties
+
+# Android Studio project-specific files
+android/.idea/
+android/*.iml
+
+# Signing credentials — never commit these
+*.jks
+*.keystore
+android/key.properties
+android/keystore.properties
+
+# Optional generated reports
+android/**/lint-results*.html
+android/**/lint-results*.xml

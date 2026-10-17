@@ -30,7 +30,11 @@ allowed_origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[
+        "https://localhost",  # Capacitor Android WebView
+        "http://localhost:5173",  # Vite development
+        # Add your deployed frontend origin here
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
