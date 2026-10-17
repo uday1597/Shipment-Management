@@ -33,7 +33,7 @@ app.add_middleware(
     allow_origins=[
         "https://localhost",  # Capacitor Android WebView
         "http://localhost:5173",  # Vite development
-        # Add your deployed frontend origin here
+        "https://shipment-management-1-g8ky.onrender.com",  # Add your deployed frontend origin here
     ],
     allow_credentials=True,
     allow_methods=["*"],

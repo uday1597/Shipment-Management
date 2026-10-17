@@ -599,7 +599,18 @@ export function ShipmentLandingPage() {
                         <span className="text-[10px] text-white/25">Record {index + 1} of {filteredShipments.length}</span>
                         <span className="text-xs text-white/40 transition group-hover:text-white">Open details ↗</span>
                       </div>
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-4 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setProofShipment(shipment);
+                          }}
+                          aria-label={`Add proof of delivery for shipment ${shipment.id}`}
+                          className="min-h-11 rounded-full border border-amber-200/25 px-3 py-2 text-xs text-amber-100 hover:bg-amber-200/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                        >
+                          📷 Proof of Delivery
+                        </button>
                         <button type="button" onClick={(event) => handleDelete(event, shipment)} disabled={deleteMutation.isPending} aria-label={`Delete shipment ${shipment.content}`} className="rounded-full border border-red-200/15 px-3 py-1.5 text-[10px] text-red-100/65 transition hover:border-red-200/35 hover:bg-red-300/[0.06] hover:text-red-100 disabled:opacity-40">Delete</button>
                       </div>
                     </article>
