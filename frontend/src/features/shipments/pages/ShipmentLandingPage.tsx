@@ -30,23 +30,10 @@ import type { Shipment } from "@/features/shipments/types/shipment";
 
 import { useShipmentStore } from "@/store/shipmentStore";
 
-import { Link } from "react-router-dom";
-
 const SHIPMENT_QUERY_KEY = ["shipments"] as const;
 
 type StatusGroup = "In transit" | "Delivered" | "Pending" | "Other";
 
-const STATUS_COLORS: Record<StatusGroup, string> = {
-
-  "In transit": "#fbbf24",
-
-  Delivered: "#34d399",
-
-  Pending: "#fb923c",
-
-  Other: "#a78bfa",
-
-};
 
 function getErrorMessage(error: unknown): string {
 
@@ -300,40 +287,6 @@ queryFn: () => getShipments(),
     [allShipments, normalizedSearch, statusFilter],
 
   );
-
-  const statusBreakdown = useMemo(() => {
-
-    const groups: StatusGroup[] = ["In transit", "Delivered", "Pending", "Other"];
-
-    return groups.map((name) => ({
-
-      name,
-
-      count: allShipments.filter(
-
-        (shipment) => getStatusGroup(shipment.status) === name,
-
-      ).length,
-
-      color: STATUS_COLORS[name],
-
-    }));
-
-  }, [allShipments]);
-
-  const totalCost = allShipments.reduce((total, shipment) => {
-
-    const cost = Number(shipment.cost);
-
-    return total + (Number.isFinite(cost) ? cost : 0);
-
-  }, 0);
-
-  const inTransit = statusBreakdown.find((item) => item.name === "In transit")?.count ?? 0;
-
-  const delivered = statusBreakdown.find((item) => item.name === "Delivered")?.count ?? 0;
-
-  const deliveryRate = totalShipments > 0 ? Math.round((delivered / totalShipments) * 100) : 0;
 
   const hasActiveFilters = searchTerm.trim().length > 0 || statusFilter !== "all";
 
@@ -932,88 +885,6 @@ onConfirm={() => {
       )}
 
     </main>
-
-  );
-
-}
-
-function MetricCard({
-
-label,
-
-value,
-
-sublabel,
-
-icon,
-
-accent,
-
-}: {
-
-  label: string;
-
-  value: string;
-
-  sublabel: string;
-
-  icon: "box" | "route" | "check" | "activity";
-
-  accent: "amber" | "orange" | "green" | "violet";
-
-}) {
-
-  const accents = {
-
-    amber: { text: "text-amber-200", border: "group-hover:border-amber-200/30", glow: "bg-amber-300" },
-
-    orange: { text: "text-orange-200", border: "group-hover:border-orange-200/30", glow: "bg-orange-300" },
-
-    green: { text: "text-emerald-200", border: "group-hover:border-emerald-200/30", glow: "bg-emerald-300" },
-
-    violet: { text: "text-violet-200", border: "group-hover:border-violet-200/30", glow: "bg-violet-300" },
-
-  };
-
-  const current = accents[accent];
-
-  const paths: Record<typeof icon, string> = {
-
-    box: "M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z M3.5 7.8 12 12l8.5-4.2M12 12v8.5",
-
-    route: "M5 19c-2 0-2-4 0-4s2 4 0 4ZM19 9c-2 0-2-4 0-4s2 4 0 4ZM7 16c5 0 2-9 10-9",
-
-    check: "m5 12 4 4L19 6",
-
-    activity: "M3 12h4l3-8 4 16 3-8h4",
-
-  };
-
-  return (
-
-    <div className={`glass-panel hover-lift group relative overflow-hidden rounded-2xl p-5 sm:p-6 ${current.border}`}>
-
-      <div aria-hidden="true" className={`absolute -right-8 -top-8 h-28 w-28 rounded-full ${current.glow} opacity-[0.06] blur-2xl transition group-hover:opacity-[0.13]`} />
-
-      <div className="flex items-center justify-between">
-
-        <p className="text-[10px] font-semibold uppercase tracking-[.19em] text-white/40">{label}</p>
-
-        <span className={`flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] ${current.text}`}>
-
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d={paths[icon]} strokeLinecap="round" strokeLinejoin="round" /></svg>
-
-        </span>
-
-      </div>
-
-      <p className="mt-6 break-words text-3xl font-semibold tracking-[-.045em] text-white sm:text-4xl">{value}</p>
-
-      <p className="mt-2 text-xs text-white/35">{sublabel}</p>
-
-      <div aria-hidden="true" className={`absolute bottom-0 left-0 h-px w-0 ${current.glow} transition-all duration-500 group-hover:w-full`} />
-
-    </div>
 
   );
 
