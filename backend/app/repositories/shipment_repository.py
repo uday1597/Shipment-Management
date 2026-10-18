@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Shipment
-
+from app.models import Shipment, ShipmentStatusHistory
 
 class ShipmentRepository:
     def __init__(self, db: Session):
@@ -96,3 +96,20 @@ class ShipmentRepository:
 
         return True
 
+
+    def add_status_history(
+        self,
+        shipment_id: int,
+        old_status: str | None,
+        new_status: str,
+        notes: str | None = None,
+    ) -> None:
+        history = ShipmentStatusHistory(
+            shipment_id=shipment_id,
+            old_status=old_status,
+            new_status=new_status,
+            notes=notes,
+        )
+
+        self.db.add(history)
+        self.db.flush()

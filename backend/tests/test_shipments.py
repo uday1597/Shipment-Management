@@ -140,9 +140,9 @@ def test_unexpected_error_returns_safe_500_response(
     client,
     monkeypatch,
 ):
-    def raise_unexpected_error(self):
-        raise RuntimeError("Sensitive internal database details")
-
+    def raise_unexpected_error(*args, **kwargs):
+        raise RuntimeError("Simulated unexpected error")
+        
     monkeypatch.setattr(
         ShipmentService,
         "get_shipments",
@@ -156,3 +156,50 @@ def test_unexpected_error_returns_safe_500_response(
         "detail": "Internal server error"
     }
     assert "Sensitive internal database details" not in response.text
+
+def test_get_shipments_with_limit(client):
+    for index in range(3):
+        response = client.post(
+            "/shipments/",
+            json={
+                "content": f"Package {index + 1}",
+                "destination": "Hyderabad",
+                "weight": 10,
+                "distance": 100,
+            },
+        )
+        assert response.status_code == 201
+
+    response = client.get("/shipments/?limit=2")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert [item["content"] for item in response.json()] == [
+        "Package 1",
+        "Package 2",
+    ]
+
+
+def test_get_shipments_with_offset(client):
+    for index in range(3):
+        client.post(
+            "/shipments/",
+            json={
+                "content": f"Package {index + 1}",
+                "destination": "Hyderabad",
+                "weight": 10,
+                "distance": 100,
+            },
+        )
+
+    response = client.get("/shipments/?limit=2&offset=2")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["content"] == "Package 3"
+
+
+def test_get_shipments_rejects_invalid_pagination(client):
+    assert client.get("/shipments/?limit=0").status_code == 422
+    assert client.get("/shipments/?limit=101").status_code == 422
+    assert client.get("/shipments/?offset=-1").status_code == 422

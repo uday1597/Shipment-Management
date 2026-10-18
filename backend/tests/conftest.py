@@ -7,8 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
-from app.models import Shipment  # Registers the Shipment model
-
+from app.models import Shipment, ShipmentStatusHistory
 
 test_engine = create_engine(
     "sqlite://",
@@ -37,7 +36,10 @@ def client():
     app.dependency_overrides[get_db] = override_get_db
 
     try:
-        with TestClient(app, raise_server_exceptions=False) as test_client:
+        with TestClient(
+            app,
+            raise_server_exceptions=False,
+        ) as test_client:
             yield test_client
     finally:
         app.dependency_overrides.clear()
