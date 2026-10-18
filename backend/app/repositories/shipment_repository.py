@@ -20,12 +20,20 @@ class ShipmentRepository:
             "distance": shipment.distance,
             "cost": shipment.cost,
         }
+    
+    def get_all(
+        self,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[dict]:
+        query = select(Shipment).order_by(Shipment.id)
 
-    def get_all(self) -> list[dict]:
-        shipments = self.db.scalars(
-            select(Shipment).order_by(Shipment.id)
-        ).all()
+        if limit is not None:
+            query = query.limit(limit)
 
+        query = query.offset(offset)
+
+        shipments = self.db.scalars(query).all()
         return [self._to_dict(item) for item in shipments]
 
     def get_by_id(self, shipment_id: int) -> dict | None:
@@ -36,6 +44,7 @@ class ShipmentRepository:
 
         return self._to_dict(shipment)
 
+    
     def create(self, shipment_data: dict) -> dict:
         data = {
             key: value
@@ -45,10 +54,12 @@ class ShipmentRepository:
 
         shipment = Shipment(**data)
         self.db.add(shipment)
-        self.db.commit()
-        self.db.refresh(shipment)
+
+        # Send pending SQL to the database without committing.
+        self.db.flush()
 
         return self._to_dict(shipment)
+
 
     def update(self, shipment_id: int, updates: dict) -> dict | None:
         shipment = self.db.get(Shipment, shipment_id)
@@ -69,10 +80,10 @@ class ShipmentRepository:
             if field in updates:
                 setattr(shipment, field, updates[field])
 
-        self.db.commit()
-        self.db.refresh(shipment)
+        self.db.flush()
 
         return self._to_dict(shipment)
+
 
     def delete(self, shipment_id: int) -> bool:
         shipment = self.db.get(Shipment, shipment_id)
@@ -81,6 +92,7 @@ class ShipmentRepository:
             return False
 
         self.db.delete(shipment)
-        self.db.commit()
+        self.db.flush()
 
         return True
+

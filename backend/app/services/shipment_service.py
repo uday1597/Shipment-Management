@@ -12,8 +12,15 @@ class ShipmentService:
     def __init__(self, repository):
         self.repository = repository
 
-    def get_shipments(self):
-        return self.repository.get_all()
+    def get_shipments(
+        self,
+        limit: int | None = None,
+        offset: int = 0,
+    ):
+        return self.repository.get_all(
+            limit=limit,
+            offset=offset,
+        )
 
     def get_shipment(self, shipment_id: int):
         shipment = self.repository.get_by_id(shipment_id)
@@ -22,73 +29,111 @@ class ShipmentService:
 
         return shipment
 
+    def _execute_write(self, operation):
+        try:
+            result = operation()
+            self.repository.db.commit()
+            return result
+        except Exception:
+            self.repository.db.rollback()
+            raise
+
+    
     def create_shipment(self, shipment_data: dict):
-        cost = self.calculate_shipping_cost(
-            shipment_data["weight"],
-            shipment_data["distance"]
-        )
-
-        new_shipment = {
-            **shipment_data,
-            "status": "created",
-            "cost": cost
-        }
-        return self.repository.create(new_shipment)
-
-    def update_shipment(self, shipment_id: int, updates: dict):
-        shipment = self.get_shipment(shipment_id)
-
-        if not updates:
-            return shipment
-
-        if "weight" in updates and updates["weight"] is None:
-            raise ValueError("Weight cannot be null")
-
-        if "distance" in updates and updates["distance"] is None:
-            raise ValueError("Distance cannot be null")
-
-        if "content" in updates and updates["content"] is None:
-            raise ValueError("Content cannot be null")
-
-        if "destination" in updates and updates["destination"] is None:
-            raise ValueError("Destination cannot be null")
-
-        updated_data = {
-            **shipment,
-            **updates
-        }
-
-        if "weight" in updates or "distance" in updates:
-            updated_data["cost"] = self.calculate_shipping_cost(
-                updated_data["weight"],
-                updated_data["distance"]
+        def operation():
+            cost = self.calculate_shipping_cost(
+                shipment_data["weight"],
+                shipment_data["distance"],
             )
 
-        updated_data["status"] = "updated"
-        return self.repository.update(shipment_id, updated_data)
+            new_shipment = {
+                **shipment_data,
+                "status": "created",
+                "cost": cost,
+            }
+
+            return self.repository.create(new_shipment)
+
+        return self._execute_write(operation)
+
+
+    def update_shipment(self, shipment_id: int, updates: dict):
+        def operation():
+            shipment = self.get_shipment(shipment_id)
+
+            if not updates:
+                return shipment
+
+            required_fields = {
+                "weight",
+                "distance",
+                "content",
+                "destination",
+            }
+
+            for field in required_fields:
+                if field in updates and updates[field] is None:
+                    raise ValueError(f"{field.capitalize()} cannot be null")
+
+            updated_data = {
+                **shipment,
+                **updates,
+            }
+
+            if "weight" in updates or "distance" in updates:
+                updated_data["cost"] = self.calculate_shipping_cost(
+                    updated_data["weight"],
+                    updated_data["distance"],
+                )
+
+            updated_data["status"] = "updated"
+
+            result = self.repository.update(shipment_id, updated_data)
+
+            if result is None:
+                raise ShipmentNotFoundError("Shipment not found")
+
+            return result
+
+        return self._execute_write(operation)
+
 
     def replace_shipment(self, shipment_id: int, shipment_data: dict):
-        shipment=self.get_shipment(shipment_id)
-        print(shipment)
-        cost = self.calculate_shipping_cost(
-            shipment_data["weight"],
-            shipment_data["distance"]
-        )
+        def operation():
+            self.get_shipment(shipment_id)
 
-        replacement = {
-            **shipment_data,
-            "status": "updated",
-            "cost": cost
-        }
-        return self.repository.update(shipment_id, replacement)
-    
+            cost = self.calculate_shipping_cost(
+                shipment_data["weight"],
+                shipment_data["distance"],
+            )
+
+            replacement = {
+                **shipment_data,
+                "status": "updated",
+                "cost": cost,
+            }
+
+            result = self.repository.update(shipment_id, replacement)
+
+            if result is None:
+                raise ShipmentNotFoundError("Shipment not found")
+
+            return result
+
+        return self._execute_write(operation)
+
+
     def delete_shipment(self, shipment_id: int):
-        deleted = self.repository.delete(shipment_id)
+        def operation():
+            deleted = self.repository.delete(shipment_id)
 
-        if not deleted:
-            raise ShipmentNotFoundError("Shipment not found")
+            if not deleted:
+                raise ShipmentNotFoundError("Shipment not found")
 
-        return True
+            return True
+
+        return self._execute_write(operation)
+
 
     @log_execution_time
     def get_shipping_cost(self, shipment_id: int):

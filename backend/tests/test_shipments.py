@@ -1,3 +1,6 @@
+import pytest
+from app.repositories.shipment_repository import ShipmentRepository
+from app.services.shipment_service import ShipmentService
 
 def create_shipment(client):
     response = client.post(
@@ -97,3 +100,59 @@ def test_create_shipment_invalid_data(client):
     )
 
     assert response.status_code == 422
+
+
+def test_create_shipment_rolls_back_on_failure(
+    client,
+    monkeypatch,
+):
+    original_create = ShipmentRepository.create
+
+    def create_then_fail(self, shipment_data):
+        original_create(self, shipment_data)
+        raise RuntimeError("Simulated failure after flush")
+
+    monkeypatch.setattr(
+        ShipmentRepository,
+        "create",
+        create_then_fail,
+    )
+
+    response = client.post(
+        "/shipments/",
+        json={
+            "content": "Wooden table",
+            "destination": "Hyderabad",
+            "weight": 10,
+            "distance": 100,
+        },
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error"}
+
+    shipments_response = client.get("/shipments/")
+
+    assert shipments_response.status_code == 200
+    assert shipments_response.json() == []
+
+def test_unexpected_error_returns_safe_500_response(
+    client,
+    monkeypatch,
+):
+    def raise_unexpected_error(self):
+        raise RuntimeError("Sensitive internal database details")
+
+    monkeypatch.setattr(
+        ShipmentService,
+        "get_shipments",
+        raise_unexpected_error,
+    )
+
+    response = client.get("/shipments/")
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": "Internal server error"
+    }
+    assert "Sensitive internal database details" not in response.text

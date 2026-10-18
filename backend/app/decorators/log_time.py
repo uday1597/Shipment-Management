@@ -1,19 +1,27 @@
-import time
+
 import functools
 import logging
+import time
 
 logger = logging.getLogger("app")
 
+
 def log_execution_time(func):
-    @functools.wraps(func)  # Keeps the original function's name and type hints intact
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.perf_counter()
-        
-        # Execute the actual function
-        result = func(*args, **kwargs)
-        
-        end_time = time.perf_counter()
-        execution_time = end_time - start_time
-        logger.info(f"⏱️ Function '{func.__name__}' took {execution_time:.4f}s to execute.")
-        return result
+
+        try:
+            return func(*args, **kwargs)
+        finally:
+            execution_time = time.perf_counter() - start_time
+
+            logger.info(
+                "Function execution completed",
+                extra={
+                    "function_name": func.__qualname__,
+                    "execution_time_seconds": round(execution_time, 4),
+                },
+            )
+
     return wrapper
