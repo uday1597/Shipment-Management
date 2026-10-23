@@ -48,6 +48,9 @@ const SHIPMENT_QUERY_KEY = ["shipments"] as const;
 
 function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
+    if (error.response?.status === 409) {
+      return "This shipment was changed elsewhere. Refresh the shipment and try again.";
+    }
     const detail: unknown = error.response?.data?.detail;
 
     if (typeof detail === "string" && detail.trim()) {
@@ -312,8 +315,10 @@ export function AddShipmentModal({
 
     if (!shipment || !hasChanges) return;
 
-    const payload: ShipmentUpdate = {};
-
+    const payload: ShipmentUpdate = {
+      expected_version: shipment.version,
+    };
+    
     if (normalized.content !== initialValues.content) {
       payload.content = normalized.content;
     }

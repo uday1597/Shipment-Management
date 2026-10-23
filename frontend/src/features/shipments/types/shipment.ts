@@ -8,6 +8,7 @@ export interface Shipment {
   weight: number;
   distance: number;
   cost: number;
+  version: number;
 }
 
 export interface ShipmentCreate {
@@ -17,4 +18,6 @@ export interface ShipmentCreate {
   distance: number;
 }
 
-export type ShipmentUpdate = Partial<ShipmentCreate>;
+export type ShipmentUpdate = Partial<ShipmentCreate> & {
+  expected_version: number;
+};

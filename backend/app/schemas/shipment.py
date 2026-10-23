@@ -48,6 +48,7 @@ class ShipmentUpdate(BaseModel):
         default=None,
         gt=0
     )
+    expected_version: int = Field(..., ge=1)
 
 
 class ShipmentResponse(BaseModel):
@@ -58,3 +59,4 @@ class ShipmentResponse(BaseModel):
     weight: float
     distance: float
     cost: float
+    version: int

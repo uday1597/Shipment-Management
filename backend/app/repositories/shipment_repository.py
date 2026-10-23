@@ -19,6 +19,7 @@ class ShipmentRepository:
             "weight": shipment.weight,
             "distance": shipment.distance,
             "cost": shipment.cost,
+            "version": shipment.version,
         }
     
     def get_all(

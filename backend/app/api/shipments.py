@@ -1,13 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status,File, UploadFile
 from typing import List, Annotated
 
-from app.dependencies import get_shipment_service
+from app.dependencies import get_shipment_service, get_proof_of_delivery_service
 from app.schemas.shipment import (
     ShipmentCreate,
     ShipmentUpdate,
     ShipmentResponse
 )
-from app.services.shipment_service import ShipmentNotFoundError, ShipmentService
+from app.schemas.proof_of_delivery import ProofOfDeliveryPhotoResponse
+
+from app.services.shipment_service import (
+    ShipmentNotFoundError,
+    ShipmentService,
+    ShipmentConflictError,
+)
+from sqlalchemy.orm.exc import StaleDataError
+
+from app.services.cloudinary_service import (
+    MAX_IMAGE_SIZE_BYTES,
+    CloudinaryStorageError,
+    InvalidProofOfDeliveryImageError,
+)
+from app.services.proof_of_delivery_service import ProofOfDeliveryService
 
 # 1. Define the router with global path configuration
 router = APIRouter(
@@ -19,6 +33,10 @@ router = APIRouter(
 # This injects a fresh ShipmentService per request without duplicating 'Depends(...)' everywhere.
 ActiveShipmentService = Annotated[ShipmentService, Depends(get_shipment_service)]
 
+ActiveProofOfDeliveryService = Annotated[
+    ProofOfDeliveryService,
+    Depends(get_proof_of_delivery_service),
+]
 
 # GET /shipments
 
@@ -65,13 +83,15 @@ def patch_shipment(
 
     try:
         return service.update_shipment(id, updates)
-    except ValueError as exc:
-        from fastapi import HTTPException
-
+    except ShipmentConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except StaleDataError as exc:
         raise HTTPException(
-            status_code=422,
-            detail=str(exc),
+            status_code=409,
+            detail="Shipment was modified concurrently. Refresh and try again.",
         ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 # DELETE /shipments/{id}
 @router.delete("/{id}", status_code=204)
@@ -81,3 +101,35 @@ def delete_shipment(
 ):
     service.delete_shipment(id)
     return None
+
+@router.post(
+    "/{shipment_id}/proof-of-delivery",
+    response_model=ProofOfDeliveryPhotoResponse,
+    status_code=201,
+)
+def upload_proof_of_delivery(
+    shipment_id: int,
+    service: ActiveProofOfDeliveryService,
+    file: UploadFile = File(...),
+):
+    try:
+        # Read at most 1 byte beyond the limit so oversized files
+        # can be rejected without loading the entire file into memory.
+        content = file.file.read(MAX_IMAGE_SIZE_BYTES + 1)
+
+        return service.create_photo(shipment_id, content)
+
+    except InvalidProofOfDeliveryImageError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except CloudinaryStorageError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Image storage is temporarily unavailable.",
+        ) from exc
+
+    finally:
+        file.file.close()

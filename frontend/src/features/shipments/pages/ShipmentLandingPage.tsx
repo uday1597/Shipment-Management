@@ -828,7 +828,7 @@ className="min-h-11 min-w-11 rounded-full hover:bg-white/10"
 
             </p>
 
-            <ProofOfDeliveryPhoto />
+            <ProofOfDeliveryPhoto shipmentId={proofShipment.id} />
 
           </div>
 
